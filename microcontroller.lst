@@ -1,0 +1,1012 @@
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 #include <p16f877a.inc>
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ;  MPASM PIC16F877A processor include
+                      00005 ; 
+                      00006 ;  (c) Copyright 1999-2013 Microchip Technology, All rights reserved
+                      00007 ;==========================================================================
+                      00008 
+                      00566         LIST
+                      00002         
+Warning[205]: Found directive in column 1. (ORG)
+0000                  00003 ORG 0x00
+0000   2805           00004     GOTO start
+                      00005 
+Warning[205]: Found directive in column 1. (ORG)
+0004                  00006 ORG 0x04
+0004   2883           00007     GOTO ISR
+                      00008 ;----------------------
+                      00009 ; VARIABLES 
+                      00010 ;----------------------
+Warning[205]: Found directive in column 1. (CBLOCK)
+                      00011 CBLOCK 0x20
+  00000020            00012     angle       
+  00000021            00013     duty_cycle        
+  00000022            00014     tempW
+  00000023            00015     tempSTATUS
+  00000024            00016     ROW_INDEX
+  00000025            00017     COL_INDEX
+  00000026            00018     index
+  00000027            00019     flag
+  00000028            00020     digit_index      
+  00000029            00021     digit1
+  0000002A            00022     digit2
+  0000002B            00023     digit3
+  0000002C            00024         digit4     
+Warning[205]: Found directive in column 1. (ENDC)
+                      00025 endc
+                      00026 ;----------------------
+                      00027 ; INITIALIZATION
+                      00028 ;----------------------
+0005                  00029 start:
+                      00030 ; Configure TRIS Registers
+0005   1683 1303      00031     banksel TRISB
+0007   30F1           00032     movlw b'11110001'     
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0008   0086           00033     movwf TRISB
+                      00034     
+0009   1683 1303      00035     banksel TRISD
+000B   3080           00036     movlw b'10000000'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+000C   0088           00037     movwf TRISD
+                      00038 
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+000D   1683 1303      00039     banksel TRISC
+000F   30E0           00040     movlw b'11100000'     
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0010   0087           00041     movwf TRISC
+                      00042     
+                      00043 ; Configure Timer2 for PWM
+0011   1283 1303      00044     banksel CCP1CON
+0013   300C           00045     movlw b'00001100'     ; Set CCP1 to PWM mode
+0014   0097           00046     movwf CCP1CON
+                      00047     
+0015   1283 1303      00048     banksel T2CON
+0017   3007           00049     movlw b'00000111'     ; Timer2 ON, prescaler 1:16
+0018   0092           00050     movwf T2CON
+                      00051 ;----------------------
+                      00052 ;PWM Period
+                      00053 ;tpwm = (PR2+1)*4*prescaler*Tosc ---->20ms/50HZ 
+                      00054 ; PR2 = 155 for ~50Hz PWM (based on Fosc=500KHZ and prescaler=16)Tosc=2Ms=0.002ms
+                      00055 ;----------------------
+0019   1683 1303      00056     banksel PR2
+001B   309B           00057     movlw d'155'           
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+001C   0092           00058     movwf PR2
+                      00059 ;----------------------   
+                      00060 ; Enable Interrupts
+                      00061 ;----------------------
+001D   1683 1303      00062     banksel PIE1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+001F   148C           00063     bsf PIE1, TMR2IE      
+0020   108C           00064         bcf PIR1, TMR2IF
+0021   1283 1303      00065     banksel INTCON
+0023   170B           00066     bsf INTCON, PEIE      
+0024   160B           00067     bsf INTCON, INTE      
+0025   178B           00068     bsf INTCON, GIE       
+0026   108B           00069         bcf INTCON, INTF
+                      00070 ;----------------------   
+                      00071 ; Clear Ports and Flags
+                      00072 ;----------------------
+0027   1283 1303      00073     banksel flag
+0029   01A7           00074     clrf flag  
+002A   1283 1303      00075     banksel PORTD
+002C   0188           00076     clrf PORTD
+002D   1283 1303      00077     banksel PORTC
+002F   0187           00078     clrf PORTC
+0030   1283 1303      00079     banksel PORTB
+0032   30FF           00080     movlw b'11111111' 
+0033   0086           00081     movwf PORTB
+                      00082 ;---------------------------
+                      00083 ; step to enter into keypad
+                      00084 ;---------------------------    
+0034                  00085 loop:
+0034   0827           00086     movf flag, W
+0035   1903           00087     btfsc STATUS, Z
+0036   2838           00088         goto loop2
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0037   2834           00089     goto loop
+0038                  00090 loop2:
+0038   01A8           00091         clrf digit_index ; = 0
+0039   209C           00092     call readkeypad
+003A   00A9           00093     movwf digit1
+003B   0AA8           00094     incf digit_index, F ; = 1
+003C   209C           00095     call readkeypad
+003D   00AA           00096     movwf digit2
+003E   0AA8           00097     incf digit_index, F ; = 2
+003F   209C           00098     call readkeypad
+0040   00AB           00099     movwf digit3
+0041   0AA8           00100     incf digit_index, F ; = 3
+                      00101   
+0042                  00102 loop3:
+0042   209C           00103     call readkeypad
+0043   00A6           00104     movwf index
+0044   0826           00105     movf index, W
+0045   3C2A           00106     sublw '*'
+0046   1903           00107     btfsc STATUS, Z
+0047   2842           00108     goto loop3
+0048   0826           00109     movf index, W
+0049   3C23           00110     sublw '#'
+004A   1D03           00111     btfss STATUS, Z
+004B   2842           00112     goto loop3
+                      00113 ;----------------------    
+                      00114 ; BACKSPACE 
+                      00115 ;----------------------
+004C   0828           00116     movf digit_index, W
+004D   1903           00117     btfsc STATUS, Z
+004E   2838           00118     goto loop2  
+                      00119      
+004F   3003           00120     movlw 3
+0050   0228           00121     subwf digit_index, W
+0051   1903           00122     btfsc STATUS, Z
+0052   285B           00123     goto clear_d3
+                      00124     
+0053   3002           00125     movlw 2
+0054   0228           00126     subwf digit_index, W
+0055   1903           00127     btfsc STATUS, Z
+0056   285E           00128     goto clear_d2
+                      00129 
+0057   3001           00130     movlw 1
+0058   0228           00131     subwf digit_index, W
+0059   1903           00132     btfsc STATUS, Z
+005A   2861           00133     goto clear_d1
+                      00134 
+005B                  00135 clear_d3:
+005B   01AB           00136     clrf digit3
+005C   03A8           00137     decf digit_index, F
+005D   2842           00138     goto loop3
+                      00139 
+005E                  00140 clear_d2:
+005E   01AA           00141     clrf digit2
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+005F   03A8           00142     decf digit_index, F
+0060   2842           00143     goto loop3
+                      00144 
+0061                  00145 clear_d1:
+0061   01A9           00146     clrf digit1
+0062   03A8           00147     decf digit_index, F
+0063   2838           00148     goto loop2 
+                      00149 ;----------------------------------------- 
+                      00150 ; this to rest the angle as real num .
+                      00151 ;converts ASCII to number 
+                      00152 ;-----------------------------------------
+0064   0829           00153     movf digit1, W
+0065   3C30           00154     sublw '0'     
+0066   00A9           00155     movwf digit1
+                      00156 
+0067   082A           00157     movf digit2, W
+0068   3C30           00158     sublw '0'
+0069   00AA           00159     movwf digit2
+                      00160 
+006A   082B           00161     movf digit3, W
+006B   3C30           00162     sublw '0'
+006C   00AB           00163     movwf digit3
+                      00164 ;------------------------------------------
+                      00165  ; angle = digit1*100 + digit2*10 + digit3
+                      00166  ; digit1 * 100
+                      00167  ;-----------------------------------------
+006D   01A0           00168         clrf angle
+006E   0829           00169         movf digit1, W
+006F   00A2           00170         movwf tempW
+0070   3064           00171     movlw D'100'
+0071   00A3           00172     movwf tempSTATUS
+                      00173 
+0072                  00174 mul1:
+0072   07A0           00175     addwf angle, F
+0073   0BA3           00176     decfsz tempSTATUS, F
+0074   2872           00177     goto mul1
+                      00178 ;----------------------
+                      00179 ; digit2 * 10
+                      00180 ;----------------------
+0075   082A           00181     movf digit2, W
+0076   00A2           00182         movwf tempW
+0077   300A           00183         movlw D'10'
+0078   00A3           00184         movwf tempSTATUS
+                      00185 
+0079                  00186 mul2:
+0079   07A0           00187     addwf angle, F
+007A   0BA3           00188     decfsz tempSTATUS, F
+007B   2879           00189     goto mul2
+                      00190 ;----------------------
+                      00191 ; digit3
+                      00192 ;----------------------
+007C   082B           00193     movf digit3, W
+007D   07A0           00194     addwf angle, F
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00195 
+007E   20DA           00196     call ConvertAngle
+007F   0095           00197     movwf CCPR1L
+0080   20E6           00198     call split_digit
+0081   20FA           00199     call multiplexing
+0082   2834           00200     goto loop
+                      00201 ;#########################
+                      00202 ;----------------------
+                      00203 ;the ISR code
+                      00204 ;----------------------
+0083                  00205 ISR:
+0083   00A2           00206     movwf tempW
+0084   0803           00207     movf STATUS, W
+0085   00A3           00208     movwf tempSTATUS
+                      00209 ; External INT RB0
+0086   188B           00210     btfsc INTCON, INTF
+0087   288B           00211     goto brakestate
+                      00212 ; Clear Timer2 IF
+0088   188C           00213     btfsc PIR1, TMR2IF
+0089   108C           00214     bcf PIR1, TMR2IF
+008A   2898           00215     goto restore_ISR
+                      00216 
+008B                  00217 brakestate:
+008B   0827           00218     movf flag, W
+008C   3A01           00219     xorlw 0x01
+008D   00A7           00220     movwf flag
+008E   108B           00221     bcf INTCON, INTF
+008F   1827           00222         btfsc flag, 0       
+0090   2892           00223         goto do_brake
+0091   2895           00224     goto do_resume
+Warning[207]: Found label after column 1. (do_brake)
+0092                  00225   do_brake:
+0092   301F           00226     movlw d'31' 
+0093   0095           00227         movwf CCPR1L  
+0094   2898           00228         goto restore_ISR
+0095                  00229 do_resume:
+0095   20DA           00230         call ConvertAngle
+0096   0095           00231         movwf CCPR1L
+0097   2898           00232         goto restore_ISR
+0098                  00233 restore_ISR:
+0098   0823           00234     movf tempSTATUS, W
+0099   0083           00235     movwf STATUS
+009A   0822           00236     movf tempW, W
+009B   0009           00237     RETFIE
+                      00238 ;----------------------------
+                      00239 ; READ KEYPAD 4x3
+                      00240 ; Columns: RB1 RB3 (output)
+                      00241 ; Rows: RB4 RB7 (input)
+                      00242 ;----------------------------
+009C                  00243 readkeypad:
+009C   01A4           00244    clrf ROW_INDEX
+009D   01A5           00245    clrf COL_INDEX
+009E                  00246 READ_COL:
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+009E   30FD           00247     movlw B'11111101' ; RB1 LOW
+009F   0086           00248     movwf PORTB
+00A0   3000           00249     movlw 0
+00A1   00A5           00250     movwf COL_INDEX
+00A2   20C8           00251     call FIND_ROW
+00A3   1D03           00252     btfss STATUS, Z
+00A4   28B5           00253     goto FOUND_KEY
+00A5   30FB           00254     movlw B'11111011' ; RB2 LOW ;ENABLE 
+00A6   0086           00255     movwf PORTB
+00A7   3001           00256     movlw 1           ;STORE THE NUM OF THE COLUMN 
+00A8   00A5           00257     movwf COL_INDEX
+00A9   20C8           00258     call FIND_ROW
+00AA   1D03           00259     btfss STATUS, Z
+00AB   28B5           00260     goto FOUND_KEY
+00AC   30F7           00261     movlw B'11110111' ; RB3 LOW
+00AD   0086           00262     movwf PORTB
+00AE   3002           00263     movlw 2
+00AF   00A5           00264     movwf COL_INDEX
+00B0   20C8           00265     call FIND_ROW
+00B1   1D03           00266     btfss STATUS, Z
+00B2   28B5           00267     goto FOUND_KEY
+00B3   0103           00268     clrw            
+00B4   0008           00269     RETURN
+                      00270 ;------------------------------------------
+                      00271 ; Use (ROW_INDEX * 3 + COL_INDEX) ? index
+                      00272 ; Convert index to number
+                      00273 ;------------------------------------------
+00B5                  00274 FOUND_KEY:
+00B5   0824           00275     movf ROW_INDEX,  W
+00B6   0724           00276     addwf ROW_INDEX, W
+00B7   0724           00277     addwf ROW_INDEX, W     ; W = 3 * row
+00B8   0725           00278     addwf COL_INDEX, W     ; + col
+00B9   00A6           00279     movwf index
+00BA   0826           00280     movf index, W
+00BB   0782           00281     addwf PCL, F        ;go to keypad table
+                      00282 ;----------------------
+                      00283 ; Key LOOKUP TABLE
+                      00284 ;---------------------- 
+                      00285 ; Returns the ASCII for the input of the keypad   
+00BC                  00286 keypadtable:
+00BC   3431           00287     retlw 0x31  ; '1'
+00BD   3432           00288     retlw 0x32   ; '2'
+00BE   3433           00289     retlw 0x33   ; '3'
+00BF   3434           00290     retlw 0x34   ; '4'
+00C0   3435           00291     retlw 0x35   ; '5'
+00C1   3436           00292     retlw 0x36   ; '6'
+00C2   3437           00293     retlw 0x37   ; '7'
+00C3   3438           00294     retlw 0x38   ; '8'
+00C4   3439           00295     retlw 0x39   ; '9'
+00C5   342A           00296     retlw 0x2A   ; '*'  
+00C6   3430           00297     retlw 0x30   ; '0'
+00C7   3423           00298     retlw 0x23   ; '#'  
+                      00299 
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00300 ;----------------------    
+                      00301 ; Check RB4 RB7 for LOW
+                      00302 ;----------------------
+00C8                  00303 FIND_ROW:
+00C8   1E06           00304     btfss PORTB, 4
+00C9   3000           00305     movlw 0
+00CA   00A4           00306     movwf ROW_INDEX
+00CB   0008           00307     RETURN
+00CC   1E86           00308     btfss PORTB, 5
+00CD   3001           00309     movlw 1
+00CE   00A4           00310     movwf ROW_INDEX
+00CF   0008           00311     RETURN
+00D0   1F06           00312     btfss PORTB, 6
+00D1   3002           00313     movlw 2
+00D2   00A4           00314     movwf ROW_INDEX
+00D3   0008           00315     RETURN
+00D4   1F86           00316     btfss PORTB, 7
+00D5   3003           00317     movlw 3
+00D6   00A4           00318     movwf ROW_INDEX
+00D7   0008           00319     RETURN
+00D8   0103           00320     clrw   ;RETURN 0 IF DOESNT PRESS ANY NUM 
+00D9   0008           00321     RETURN
+                      00322 ;----------------------------
+                      00323 ;convert ANGLE TO DUTY (Linear map)
+                      00324 ;duty = (angle  / 6 )+ 31
+                      00325 ;----------------------------
+00DA                  00326 ConvertAngle:
+00DA   0820           00327     movf angle, W
+00DB   00A2           00328     movwf tempW
+00DC   01A1           00329   clrf duty_cycle
+Warning[207]: Found label after column 1. (DIV_BY_6)
+00DD                  00330       DIV_BY_6:
+00DD   3006           00331     movlw D'6'
+00DE   02A2           00332     subwf tempW, F
+00DF   1C03           00333     btfss STATUS, C    
+00E0   28E3           00334     goto DIV_LOOP
+00E1   0AA1           00335     incf duty_cycle, F
+00E2   28DD           00336     goto DIV_BY_6
+00E3                  00337 DIV_LOOP:
+00E3   0821           00338         movf duty_cycle, W
+00E4   3E1F           00339         addlw D'31'
+00E5   0008           00340     RETURN
+                      00341 ;#########################
+                      00342 ;--------------------------
+                      00343 ; split  digit for display
+                      00344 ;--------------------------
+                      00345 ; angle (0-->180) ? digit1,2,3
+00E6                  00346 split_digit:
+00E6   0820           00347     movf angle, W
+00E7   00A2           00348     movwf tempW
+00E8   01A9           00349     clrf digit1 
+                      00350 
+00E9   3064           00351     movlw d'100'
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00EA   20F2           00352     call division
+00EB   00AA           00353     movwf digit2       ; hundreds
+                      00354 
+00EC   300A           00355     movlw d'10'
+00ED   20F2           00356     call division
+00EE   00AB           00357     movwf digit3       ; tens
+                      00358 
+00EF   0822           00359     movf tempW, W
+00F0   00AC           00360     movwf digit4       ; units
+00F1   0008           00361     RETURN
+                      00362 
+00F2                  00363 division:
+00F2   01A8           00364     clrf digit_index
+00F3                  00365 division2:
+00F3   02A2           00366     subwf tempW, F
+00F4   1C03           00367     btfss STATUS, C
+00F5   28F8           00368     goto div_done
+00F6   0AA8           00369     incf digit_index, F
+00F7   28F3           00370     goto division2
+00F8                  00371 div_done:
+00F8   0828           00372     movf digit_index, W
+00F9   0008           00373     RETURN
+                      00374 ;----------------------
+                      00375 ; display multiplex
+                      00376 ;----------------------
+00FA                  00377 multiplexing:
+00FA   01A8           00378     clrf digit_index
+00FB                  00379 display:
+00FB   0828           00380     movf digit_index, W
+00FC   2106           00381     call select
+00FD   2114           00382     call lookup_table
+00FE   0088           00383     movwf PORTD
+00FF   2131           00384     call delay
+0100   0AA8           00385     incf digit_index, F
+0101   0828           00386     movf digit_index, W
+0102   3C04           00387     sublw D'4'   
+0103   1D03           00388     btfss STATUS, Z
+0104   28FB           00389     goto display
+0105   0008           00390     RETURN
+                      00391 
+0106                  00392 select:
+0106   1007           00393     bcf PORTC, 0
+0107   1087           00394     bcf PORTC, 1
+0108   1187           00395     bcf PORTC, 3
+0109   1207           00396         bcf PORTC, 4
+                      00397 
+010A   0828           00398     movf digit_index, W
+010B   0782           00399     addwf PCL, F
+                      00400 
+010C   1407           00401 sel0: bsf PORTC, 0
+010D   0008           00402       RETURN
+010E   1487           00403 sel1: bsf PORTC, 1
+010F   0008           00404       RETURN
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0110   1587           00405 sel2: bsf PORTC, 3
+0111   0008           00406       RETURN
+0112   1607           00407 sel3: bsf PORTC, 4
+0113   0008           00408           RETURN
+                      00409 ;----------------------
+                      00410 ;the lookup table
+                      00411 ;----------------------
+0114                  00412 lookup_table:
+0114   0828           00413     movf digit_index, W
+0115   0782           00414     addwf PCL, F
+0116   291A           00415     goto d1
+0117   291D           00416     goto d2
+0118   2920           00417     goto d3
+0119   2923           00418         goto d4
+                      00419 
+                      00420 
+011A   0829           00421 d1: movf digit1, W
+011B   2126           00422         call seg_table
+011C   0008           00423         RETURN
+                      00424 
+011D   082A           00425 d2: movf digit2, W
+011E   2126           00426         call seg_table
+011F   0008           00427         RETURN
+                      00428 
+0120   082B           00429 d3: movf digit3, W
+0121   2126           00430         call seg_table
+0122   0008           00431         RETURN
+                      00432 
+0123   082C           00433 d4: movf digit4, W 
+0124   2126           00434                 call seg_table
+0125   0008           00435                 RETURN
+                      00436 ;----------------------
+                      00437 ; 7 SEGMENT TABLE 
+                      00438 ;----------------------
+0126                  00439 seg_table:
+0126   0782           00440     addwf PCL, F
+0127   343F           00441     retlw b'00111111' ; 0
+0128   3406           00442     retlw b'00000110' ; 1
+0129   345B           00443     retlw b'01011011' ; 2
+012A   344F           00444     retlw b'01001111' ; 3
+012B   3466           00445     retlw b'01100110' ; 4
+012C   346D           00446     retlw b'01101101' ; 5
+012D   347D           00447     retlw b'01111101' ; 6
+012E   3407           00448     retlw b'00000111' ; 7
+012F   347F           00449     retlw b'01111111' ; 8
+0130   346F           00450     retlw b'01101111' ; 9
+                      00451 ;----------------------
+                      00452 ;delay code 
+                      00453 ;----------------------
+0131                  00454 delay:
+0131   30FA           00455     movlw d'250'
+0132   00A2           00456     movwf tempW
+0133                  00457 d_loop:
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0133   0BA2           00458     decfsz tempW, F
+0134   2933           00459     goto d_loop
+0135   0008           00460     RETURN
+                      00461 
+                      00462     END
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE 11
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ACKDT                             00000005
+ACKEN                             00000004
+ACKSTAT                           00000006
+ADCON0                            0000001F
+ADCON1                            0000009F
+ADCS0                             00000006
+ADCS1                             00000007
+ADCS2                             00000006
+ADDEN                             00000003
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+BCLIE                             00000003
+BCLIF                             00000003
+BF                                00000000
+BRGH                              00000002
+C                                 00000000
+C1INV                             00000004
+C1OUT                             00000006
+C2INV                             00000005
+C2OUT                             00000007
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCP2CON                           0000001D
+CCP2IE                            00000000
+CCP2IF                            00000000
+CCP2M0                            00000000
+CCP2M1                            00000001
+CCP2M2                            00000002
+CCP2M3                            00000003
+CCP2X                             00000005
+CCP2Y                             00000004
+CCPR1                             00000015
+CCPR1H                            00000016
+CCPR1L                            00000015
+CCPR2                             0000001B
+CCPR2H                            0000001C
+CCPR2L                            0000001B
+CHS0                              00000003
+CHS1                              00000004
+CHS2                              00000005
+CIS                               00000003
+CKE                               00000006
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE 12
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+CKP                               00000004
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             0000009C
+CMIE                              00000006
+CMIF                              00000006
+COL_INDEX                         00000025
+CREN                              00000004
+CSRC                              00000007
+CVR0                              00000000
+CVR1                              00000001
+CVR2                              00000002
+CVR3                              00000003
+CVRCON                            0000009D
+CVREN                             00000007
+CVROE                             00000006
+CVRR                              00000005
+ConvertAngle                      000000DA
+D                                 00000005
+DATA_ADDRESS                      00000005
+DC                                00000001
+DIV_BY_6                          000000DD
+DIV_LOOP                          000000E3
+D_A                               00000005
+D_NOT_A                           00000005
+EEADR                             0000010D
+EEADRH                            0000010F
+EECON1                            0000018C
+EECON2                            0000018D
+EEDATA                            0000010C
+EEDATH                            0000010E
+EEIE                              00000004
+EEIF                              00000004
+EEPGD                             00000007
+F                                 00000001
+FERR                              00000002
+FIND_ROW                          000000C8
+FOUND_KEY                         000000B5
+FSR                               00000004
+GCEN                              00000007
+GIE                               00000007
+GO                                00000002
+GO_DONE                           00000002
+GO_NOT_DONE                       00000002
+I2C_DATA                          00000005
+I2C_READ                          00000002
+I2C_START                         00000003
+I2C_STOP                          00000004
+IBF                               00000007
+IBOV                              00000005
+INDF                              00000000
+INTCON                            0000000B
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE 13
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+ISR                               00000083
+NOT_A                             00000005
+NOT_ADDRESS                       00000005
+NOT_BO                            00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000002
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_RC8                           00000006
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+NOT_TX8                           00000006
+NOT_W                             00000002
+NOT_WRITE                         00000002
+OBF                               00000006
+OERR                              00000001
+OPTION_REG                        00000081
+P                                 00000004
+PCFG0                             00000000
+PCFG1                             00000001
+PCFG2                             00000002
+PCFG3                             00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PEN                               00000002
+PIE1                              0000008C
+PIE2                              0000008D
+PIR1                              0000000C
+PIR2                              0000000D
+PORTA                             00000005
+PORTB                             00000006
+PORTC                             00000007
+PORTD                             00000008
+PORTE                             00000009
+PR2                               00000092
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+PSPIE                             00000007
+PSPIF                             00000007
+PSPMODE                           00000004
+R                                 00000002
+RA0                               00000000
+RA1                               00000001
+RA2                               00000002
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE 14
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+RA3                               00000003
+RA4                               00000004
+RA5                               00000005
+RB0                               00000000
+RB1                               00000001
+RB2                               00000002
+RB3                               00000003
+RB4                               00000004
+RB5                               00000005
+RB6                               00000006
+RB7                               00000007
+RBIE                              00000003
+RBIF                              00000000
+RC0                               00000000
+RC1                               00000001
+RC2                               00000002
+RC3                               00000003
+RC4                               00000004
+RC5                               00000005
+RC6                               00000006
+RC7                               00000007
+RC8_9                             00000006
+RC9                               00000006
+RCD8                              00000000
+RCEN                              00000003
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RD0                               00000000
+RD1                               00000001
+RD2                               00000002
+RD3                               00000003
+RD4                               00000004
+RD5                               00000005
+RD6                               00000006
+RD7                               00000007
+RE0                               00000000
+RE1                               00000001
+RE2                               00000002
+READ_COL                          0000009E
+READ_WRITE                        00000002
+ROW_INDEX                         00000024
+RP0                               00000005
+RP1                               00000006
+RSEN                              00000001
+RX9                               00000006
+RX9D                              00000000
+R_NOT_W                           00000002
+R_W                               00000002
+S                                 00000003
+SEN                               00000000
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE 15
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+SMP                               00000007
+SPBRG                             00000099
+SPEN                              00000007
+SREN                              00000005
+SSPADD                            00000093
+SSPBUF                            00000013
+SSPCON                            00000014
+SSPCON2                           00000091
+SSPEN                             00000005
+SSPIE                             00000003
+SSPIF                             00000003
+SSPM0                             00000000
+SSPM1                             00000001
+SSPM2                             00000002
+SSPM3                             00000003
+SSPOV                             00000006
+SSPSTAT                           00000094
+STATUS                            00000003
+SYNC                              00000004
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1INSYNC                          00000002
+T1OSCEN                           00000003
+T1SYNC                            00000002
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISA0                            00000000
+TRISA1                            00000001
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE 16
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TRISA2                            00000002
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
+TRISB                             00000086
+TRISB0                            00000000
+TRISB1                            00000001
+TRISB2                            00000002
+TRISB3                            00000003
+TRISB4                            00000004
+TRISB5                            00000005
+TRISB6                            00000006
+TRISB7                            00000007
+TRISC                             00000087
+TRISC0                            00000000
+TRISC1                            00000001
+TRISC2                            00000002
+TRISC3                            00000003
+TRISC4                            00000004
+TRISC5                            00000005
+TRISC6                            00000006
+TRISC7                            00000007
+TRISD                             00000088
+TRISD0                            00000000
+TRISD1                            00000001
+TRISD2                            00000002
+TRISD3                            00000003
+TRISD4                            00000004
+TRISD5                            00000005
+TRISD6                            00000006
+TRISD7                            00000007
+TRISE                             00000089
+TRISE0                            00000000
+TRISE1                            00000001
+TRISE2                            00000002
+TRMT                              00000001
+TX8_9                             00000006
+TX9                               00000006
+TX9D                              00000000
+TXD8                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+UA                                00000001
+W                                 00000000
+WCOL                              00000007
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE 17
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_ALL                           00001FFF
+_CP_OFF                           00003FFF
+_CP_ON                            00001FFF
+_DEBUG_OFF                        00003FFF
+_DEBUG_ON                         000037FF
+_DEVID1                           00002006
+_FOSC_EXTRC                       00003FFF
+_FOSC_HS                          00003FFE
+_FOSC_LP                          00003FFC
+_FOSC_XT                          00003FFD
+_HS_OSC                           00003FFE
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_LP_OSC                           00003FFC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC                           00003FFF
+_WDTE_OFF                         00003FFB
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_WRT_1FOURTH                      00003BFF
+_WRT_256                          00003DFF
+_WRT_HALF                         000039FF
+_WRT_OFF                          00003FFF
+_XT_OSC                           00003FFD
+__16F877A                         00000001
+__DEBUG                           1
+angle                             00000020
+brakestate                        0000008B
+clear_d1                          00000061
+clear_d2                          0000005E
+clear_d3                          0000005B
+d1                                0000011A
+d2                                0000011D
+d3                                00000120
+d4                                00000123
+d_loop                            00000133
+delay                             00000131
+digit1                            00000029
+digit2                            0000002A
+digit3                            0000002B
+digit4                            0000002C
+MPASM  5.51               MICROCONTROLLER.ASM   1-8-2026  13:15:11         PAGE 18
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+digit_index                       00000028
+display                           000000FB
+div_done                          000000F8
+division                          000000F2
+division2                         000000F3
+do_brake                          00000092
+do_resume                         00000095
+duty_cycle                        00000021
+flag                              00000027
+index                             00000026
+keypadtable                       000000BC
+lookup_table                      00000114
+loop                              00000034
+loop2                             00000038
+loop3                             00000042
+mul1                              00000072
+mul2                              00000079
+multiplexing                      000000FA
+readkeypad                        0000009C
+restore_ISR                       00000098
+seg_table                         00000126
+sel0                              0000010C
+sel1                              0000010E
+sel2                              00000110
+sel3                              00000112
+select                            00000106
+split_digit                       000000E6
+start                             00000005
+tempSTATUS                        00000023
+tempW                             00000022
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+0000 : X---XXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0080 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+00C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0100 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXX----------
+
+All other memory blocks unused.
+
+Program Memory Words Used:   307
+Program Memory Words Free:  7885
+
+
+Errors   :     0
+Warnings :     6 reported,     0 suppressed
+Messages :     5 reported,     0 suppressed
+
+

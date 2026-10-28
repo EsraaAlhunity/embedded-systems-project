@@ -1,0 +1,114 @@
+MPLINK 4.49, Linker
+Linker Map File - Created Thu Jan 08 13:15:12 2026
+
+                                 Section Info
+                  Section       Type    Address   Location Size(Bytes)
+                ---------  ---------  ---------  ---------  ---------
+                   .org_0       code   0x000000    program   0x000000
+                   .org_1       code   0x000000    program   0x000002
+                   .org_2       code   0x000004    program   0x000264
+
+
+
+                              Program Memory Usage 
+                               Start         End      
+                           ---------   ---------      
+                            0x000000    0x000000      
+                            0x000004    0x000135      
+            307 out of 8454 program addresses used, program memory utilization is 3%
+
+
+
+                              Symbols - Sorted by Name
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+             ConvertAngle   0x0000da    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 DIV_BY_6   0x0000dd    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 DIV_LOOP   0x0000e3    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 FIND_ROW   0x0000c8    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                FOUND_KEY   0x0000b5    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                      ISR   0x000083    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 READ_COL   0x00009e    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+               brakestate   0x00008b    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 clear_d1   0x000061    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 clear_d2   0x00005e    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 clear_d3   0x00005b    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                       d1   0x00011a    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                       d2   0x00011d    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                       d3   0x000120    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                       d4   0x000123    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                   d_loop   0x000133    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                    delay   0x000131    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                  display   0x0000fb    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 div_done   0x0000f8    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 division   0x0000f2    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                division2   0x0000f3    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 do_brake   0x000092    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                do_resume   0x000095    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+              keypadtable   0x0000bc    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+             lookup_table   0x000114    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     loop   0x000034    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                    loop2   0x000038    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                    loop3   0x000042    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     mul1   0x000072    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     mul2   0x000079    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+             multiplexing   0x0000fa    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+               readkeypad   0x00009c    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+              restore_ISR   0x000098    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                seg_table   0x000126    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     sel0   0x00010c    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     sel1   0x00010e    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     sel2   0x000110    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     sel3   0x000112    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                   select   0x000106    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+              split_digit   0x0000e6    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                    start   0x000005    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+
+
+
+                              Symbols - Sorted by Address
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+                    start   0x000005    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     loop   0x000034    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                    loop2   0x000038    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                    loop3   0x000042    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 clear_d3   0x00005b    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 clear_d2   0x00005e    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 clear_d1   0x000061    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     mul1   0x000072    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     mul2   0x000079    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                      ISR   0x000083    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+               brakestate   0x00008b    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 do_brake   0x000092    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                do_resume   0x000095    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+              restore_ISR   0x000098    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+               readkeypad   0x00009c    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 READ_COL   0x00009e    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                FOUND_KEY   0x0000b5    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+              keypadtable   0x0000bc    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 FIND_ROW   0x0000c8    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+             ConvertAngle   0x0000da    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 DIV_BY_6   0x0000dd    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 DIV_LOOP   0x0000e3    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+              split_digit   0x0000e6    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 division   0x0000f2    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                division2   0x0000f3    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                 div_done   0x0000f8    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+             multiplexing   0x0000fa    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                  display   0x0000fb    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                   select   0x000106    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     sel0   0x00010c    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     sel1   0x00010e    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     sel2   0x000110    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                     sel3   0x000112    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+             lookup_table   0x000114    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                       d1   0x00011a    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                       d2   0x00011d    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                       d3   0x000120    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                       d4   0x000123    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                seg_table   0x000126    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                    delay   0x000131    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+                   d_loop   0x000133    program     static C:\Users\S.A\OneDrive\Desktop\BitMind\microcontroller.asm
+
+
